@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0d0d18">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Pantry">
+<title>Pantry</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0d18;
+    --surface: #16162a;
+    --surface2: #1f1f38;
+    --surface3: #282844;
+    --border: rgba(255,255,255,0.06);
+    --accent: #c9a96e;
+    --accent-glow: rgba(201,169,110,0.15);
+    --accent2: #6e9fc9;
+    --danger: #c96e6e;
+    --danger-soft: rgba(201,110,110,0.12);
+    --warning: #c9b46e;
+    --warning-soft: rgba(201,180,110,0.12);
+    --success: #6ec98a;
+    --success-soft: rgba(110,201,138,0.12);
+    --fridge: #6e9fc9;
+    --fridge-soft: rgba(110,159,201,0.12);
+    --pantry: #c9a96e;
+    --pantry-soft: rgba(201,169,110,0.12);
+    --freezer: #9a6ec9;
+    --freezer-soft: rgba(154,110,201,0.12);
+    --text: #ede9e0;
+    --text-muted: rgba(237,233,224,0.4);
+    --text-mid: rgba(237,233,224,0.7);
+    --radius: 14px;
+    --radius-sm: 8px;
+    --font-display: 'Cormorant Garamond', serif;
+    --font-body: 'DM Sans', sans-serif;
+    --bottom-nav-h: 70px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text);
+    height: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+    overflow-x: hidden;
+    overscroll-behavior: none;
+  }
+
+  .ambient {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: 0; overflow: hidden;
+  }
+  .ambient-blob {
+    position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.5;
+    animation: blobDrift 12s ease-in-out infinite alternate;
+  }
+  .ambient-blob:nth-child(1) { width: 300px; height: 300px; background: radial-gradient(circle, rgba(110,159,201,0.12), transparent); top: -100px; left: -80px; animation-delay: 0s; }
+  .ambient-blob:nth-child(2) { width: 250px; height: 250px; background: radial-gradient(circle, rgba(201,169,110,0.1), transparent); bottom: 20%; right: -60px; animation-delay: -4s; }
+  .ambient-blob:nth-child(3) { width: 200px; height: 200px; background: radial-gradient(circle, rgba(154,110,201,0.08), transparent); bottom: 10%; left: 10%; animation-delay: -8s; }
+  @keyframes blobDrift { from { transform: translate(0,0) scale(1); } to { transform: translate(20px,-30px) scale(1.1); } }
+
+  #app { position: relative; z-index: 1; display: flex; flex-direction: column; height: 100vh; }
+
+  .header {
+    padding: 52px 24px 16px;
+    display: flex; align-items: flex-end; justify-content: space-between;
+    flex-shrink: 0;
+    position: sticky; top: 0; z-index: 10;
+    background: linear-gradient(to bottom, rgba(13,13,24,0.97) 60%, transparent);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  }
+  .header-left h1 {
+    font-family: var(--font-display);
+    font-size: 34px; font-weight: 700; letter-spacing: -0.5px; line-height: 1;
+    background: linear-gradient(135deg, var(--text) 30%, var(--accent));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .header-left p { font-size: 13px; color: var(--text-muted); margin-top: 4px; font-weight: 300; }
+  .header-actions { display: flex; gap: 8px; }
+  .icon-btn {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: var(--surface2); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .icon-btn:active { transform: scale(0.92); background: var(--surface3); }
+  .icon-btn svg { width: 18px; height: 18px; stroke: var(--text-muted); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+  .tab-bar {
+    display: flex; padding: 0 20px 8px; gap: 6px;
+    flex-shrink: 0; overflow-x: auto; scrollbar-width: none;
+  }
+  .tab-bar::-webkit-scrollbar { display: none; }
+  .tab {
+    padding: 7px 16px; border-radius: 20px; font-size: 13px; font-weight: 500;
+    cursor: pointer; white-space: nowrap; transition: all 0.2s;
+    border: 1px solid transparent; color: var(--text-muted); background: transparent;
+  }
+  .tab.active { color: var(--text); background: var(--surface2); border-color: var(--border); }
+  .tab[data-tab="fridge"].active { color: var(--fridge); border-color: rgba(110,159,201,0.3); background: var(--fridge-soft); }
+  .tab[data-tab="pantry"].active { color: var(--pantry); border-color: rgba(201,169,110,0.3); background: var(--pantry-soft); }
+  .tab[data-tab="freezer"].active { color: var(--freezer); border-color: rgba(154,110,201,0.3); background: var(--freezer-soft); }
+
+  .search-wrap { padding: 0 20px 12px; flex-shrink: 0; }
+  .search-bar {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 10px 14px; transition: border-color 0.2s;
+  }
+  .search-bar:focus-within { border-color: rgba(201,169,110,0.3); }
+  .search-bar svg { width: 16px; height: 16px; stroke: var(--text-muted); fill: none; stroke-width: 2; flex-shrink: 0; stroke-linecap: round; stroke-linejoin: round; }
+  .search-bar input {
+    background: none; border: none; outline: none;
+    color: var(--text); font-family: var(--font-body); font-size: 14px; width: 100%;
+  }
+  .search-bar input::placeholder { color: var(--text-muted); }
+
+  .stats-strip { display: flex; gap: 8px; padding: 0 20px 16px; overflow-x: auto; scrollbar-width: none; flex-shrink: 0; }
+  .stats-strip::-webkit-scrollbar { display: none; }
+  .stat-chip {
+    flex-shrink: 0; padding: 8px 14px; border-radius: 10px;
+    background: var(--surface); border: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .stat-chip .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .stat-chip .label { font-size: 12px; color: var(--text-muted); }
+  .stat-chip .val { font-size: 13px; font-weight: 500; color: var(--text); }
+
+  .content {
+    flex: 1; overflow-y: auto; padding: 0 20px;
+    padding-bottom: calc(var(--bottom-nav-h) + 20px);
+    overscroll-behavior: contain; scrollbar-width: none;
+  }
+  .content::-webkit-scrollbar { display: none; }
+
+  .section-label {
+    font-size: 11px; font-weight: 500; letter-spacing: 1.2px;
+    text-transform: uppercase; color: var(--text-muted); margin: 16px 0 10px;
+  }
+
+  .items-list { display: flex; flex-direction: column; gap: 8px; }
+  .item-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 14px 16px;
+    display: flex; align-items: center; gap: 14px;
+    transition: all 0.2s; cursor: pointer;
+    animation: slideIn 0.3s ease both;
+  }
+  @keyframes slideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .item-card:active { transform: scale(0.985); background: var(--surface2); }
+  .item-card.low-stock { border-color: rgba(201,110,110,0.3); }
+  .item-card.expiring { border-color: rgba(201,180,110,0.3); }
+
+  .item-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; flex-shrink: 0;
+  }
+  .item-icon.fridge { background: var(--fridge-soft); }
+  .item-icon.pantry { background: var(--pantry-soft); }
+  .item-icon.freezer { background: var(--freezer-soft); }
+
+  .item-info { flex: 1; min-width: 0; }
+  .item-name { font-size: 15px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .item-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; font-weight: 300; }
+
+  .item-right { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; flex-shrink: 0; }
+  .item-qty { font-size: 15px; font-weight: 500; }
+  .item-badge { font-size: 10px; font-weight: 500; padding: 2px 7px; border-radius: 20px; }
+  .badge-low { background: var(--danger-soft); color: var(--danger); }
+  .badge-expiring { background: var(--warning-soft); color: var(--warning); }
+  .badge-fresh { background: var(--success-soft); color: var(--success); }
+
+  .empty-state {
+    text-align: center; padding: 60px 20px;
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
+  }
+  .empty-state .emoji { font-size: 48px; }
+  .empty-state h3 { font-family: var(--font-display); font-size: 22px; font-weight: 600; color: var(--text-mid); }
+  .empty-state p { font-size: 14px; color: var(--text-muted); font-weight: 300; line-height: 1.5; }
+
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 100%; max-width: 480px; height: var(--bottom-nav-h);
+    background: rgba(13,13,24,0.94);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-around;
+    padding: 0 10px; z-index: 100;
+  }
+  .nav-item {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    cursor: pointer; padding: 8px 16px; border-radius: 12px;
+    transition: all 0.2s; flex: 1; position: relative;
+  }
+  .nav-item:active { background: var(--surface2); }
+  .nav-item svg { width: 22px; height: 22px; stroke: var(--text-muted); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; transition: stroke 0.2s; }
+  .nav-item span { font-size: 11px; color: var(--text-muted); transition: color 0.2s; }
+  .nav-item.active svg { stroke: var(--accent); }
+  .nav-item.active span { color: var(--accent); }
+  .nav-badge {
+    position: absolute; top: 4px; right: 14px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--danger); color: white;
+    font-size: 9px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid var(--bg);
+  }
+
+  .fab {
+    position: fixed; bottom: calc(var(--bottom-nav-h) + 16px); right: 20px;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), #b8892e);
+    border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 8px 24px rgba(201,169,110,0.35), 0 2px 8px rgba(0,0,0,0.4);
+    transition: all 0.2s; z-index: 99;
+  }
+  .fab:active { transform: scale(0.92); }
+  .fab svg { width: 24px; height: 24px; stroke: #0d0d18; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    z-index: 200; display: flex; align-items: flex-end;
+    opacity: 0; pointer-events: none; transition: opacity 0.3s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal {
+    width: 100%; max-width: 480px; margin: 0 auto;
+    background: var(--surface); border-radius: 24px 24px 0 0;
+    padding: 24px 24px 40px;
+    transform: translateY(100%); transition: transform 0.35s cubic-bezier(0.32,0.72,0,1);
+    max-height: 90vh; overflow-y: auto; scrollbar-width: none;
+  }
+  .modal::-webkit-scrollbar { display: none; }
+  .modal-overlay.open .modal { transform: translateY(0); }
+  .modal-handle { width: 36px; height: 4px; background: var(--surface3); border-radius: 2px; margin: 0 auto 20px; }
+  .modal-title { font-family: var(--font-display); font-size: 26px; font-weight: 600; margin-bottom: 20px; }
+
+  .form-group { margin-bottom: 16px; }
+  .form-label { font-size: 12px; font-weight: 500; color: var(--text-muted); margin-bottom: 7px; display: block; letter-spacing: 0.5px; text-transform: uppercase; }
+  .form-input, .form-select {
+    width: 100%; padding: 13px 16px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); color: var(--text);
+    font-family: var(--font-body); font-size: 15px;
+    outline: none; transition: border-color 0.2s; appearance: none;
+  }
+  .form-input:focus, .form-select:focus { border-color: rgba(201,169,110,0.4); }
+  .form-input::placeholder { color: var(--text-muted); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .emoji-picker { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .emoji-opt {
+    width: 42px; height: 42px; border-radius: 10px;
+    border: 1.5px solid var(--border); background: var(--surface2);
+    font-size: 20px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .emoji-opt.selected { border-color: var(--accent); background: var(--accent-glow); }
+  .emoji-opt:active { transform: scale(0.9); }
+
+  .cat-row { display: flex; gap: 8px; }
+  .cat-opt {
+    flex: 1; padding: 10px 8px; border-radius: var(--radius-sm);
+    border: 1.5px solid var(--border); background: var(--surface2);
+    font-size: 13px; font-weight: 500; text-align: center; cursor: pointer;
+    transition: all 0.2s; color: var(--text-muted);
+  }
+  .cat-opt.selected.fridge { border-color: var(--fridge); background: var(--fridge-soft); color: var(--fridge); }
+  .cat-opt.selected.pantry { border-color: var(--pantry); background: var(--pantry-soft); color: var(--pantry); }
+  .cat-opt.selected.freezer { border-color: var(--freezer); background: var(--freezer-soft); color: var(--freezer); }
+
+  .btn-primary {
+    width: 100%; padding: 15px;
+    background: linear-gradient(135deg, var(--accent), #b8892e);
+    border: none; border-radius: var(--radius-sm);
+    color: #0d0d18; font-family: var(--font-body); font-size: 15px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s; margin-top: 8px;
+  }
+  .btn-primary:active { transform: scale(0.98); opacity: 0.9; }
+  .btn-danger {
+    width: 100%; padding: 13px; margin-top: 8px;
+    background: var(--danger-soft); border: 1px solid rgba(201,110,110,0.2);
+    border-radius: var(--radius-sm); color: var(--danger);
+    font-family: var(--font-body); font-size: 14px; font-weight: 500;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .btn-danger:active { transform: scale(0.98); }
+
+  /* Settings */
+  .settings-section { margin-bottom: 24px; }
+  .settings-section-title { font-size: 11px; font-weight: 500; letter-spacing: 1.2px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; }
+  .settings-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .settings-row { padding: 14px 16px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--border); }
+  .settings-row:last-child { border-bottom: none; }
+  .settings-row.col { flex-direction: column; align-items: flex-start; }
+  .settings-row-icon { width: 36px; height: 36px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 18px; }
+  .settings-row-info { flex: 1; }
+  .settings-row-info .title { font-size: 14px; font-weight: 500; }
+  .settings-row-info .sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; font-weight: 300; }
+  .settings-input {
+    width: 100%; padding: 10px 12px; margin-top: 8px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); color: var(--text);
+    font-family: var(--font-body); font-size: 13px; outline: none;
+  }
+  .settings-input:focus { border-color: rgba(201,169,110,0.4); }
+  .settings-input::placeholder { color: var(--text-muted); }
+  .btn-save {
+    width: 100%; padding: 12px; margin-top: 10px;
+    background: var(--accent-glow); border: 1px solid rgba(201,169,110,0.3);
+    border-radius: var(--radius-sm); color: var(--accent);
+    font-family: var(--font-body); font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .btn-save:active { transform: scale(0.98); }
+
+  .toggle { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-track { position: absolute; inset: 0; background: var(--surface3); border-radius: 12px; cursor: pointer; transition: background 0.2s; }
+  .toggle input:checked + .toggle-track { background: var(--accent); }
+  .toggle-track::after { content: ''; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; background: white; border-radius: 50%; transition: transform 0.2s; }
+  .toggle input:checked + .toggle-track::after { transform: translateX(20px); }
+
+  .toast {
+    position: fixed; top: 60px; left: 50%; transform: translateX(-50%) translateY(-20px);
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 18px;
+    font-size: 13px; font-weight: 500; color: var(--text);
+    z-index: 999; opacity: 0; transition: all 0.3s;
+    white-space: nowrap; pointer-events: none;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.success { border-color: rgba(110,201,138,0.4); color: var(--success); }
+  .toast.error { border-color: rgba(201,110,110,0.4); color: var(--danger); }
+
+  .alerts-list { display: flex; flex-direction: column; gap: 10px; }
+  .alert-card { padding: 14px 16px; border-radius: var(--radius); border: 1px solid; display: flex; align-items: flex-start; gap: 12px; cursor: pointer; }
+  .alert-card.low { background: var(--danger-soft); border-color: rgba(201,110,110,0.25); }
+  .alert-card.expiring { background: var(--warning-soft); border-color: rgba(201,180,110,0.25); }
+  .alert-icon { font-size: 22px; flex-shrink: 0; margin-top: 1px; }
+  .alert-info h4 { font-size: 14px; font-weight: 500; }
+  .alert-info p { font-size: 12px; color: var(--text-muted); margin-top: 3px; font-weight: 300; }
+
+  .page { display: none; flex-direction: column; height: 100%; }
+  .page.active { display: flex; }
+
+  .instructions-text { font-size: 13px; color: var(--text-mid); line-height: 1.75; font-weight: 300; }
+  .instructions-text strong { color: var(--accent); font-weight: 500; }
+  code { background: var(--surface3); padding: 1px 5px; border-radius: 4px; font-size: 12px; color: var(--accent2); font-family: monospace; }
+</style>
+</head>
+<body>
+
+<div class="ambient">
+  <div class="ambient-blob"></div>
+  <div class="ambient-blob"></div>
+  <div class="ambient-blob"></div>
+</div>
+
+<div id="app">
+
+  <!-- HOME PAGE -->
+  <div class="page active" id="page-home">
+    <div class="header">
+      <div class="header-left">
+        <h1>Pantry</h1>
+        <p id="header-sub">Loading…</p>
+      </div>
+      <div class="header-actions">
+        <div class="icon-btn" onclick="refreshData()" title="Sync with Google Sheets">
+          <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-bar">
+      <div class="tab active" data-tab="all" onclick="setTab('all')">All</div>
+      <div class="tab" data-tab="fridge" onclick="setTab('fridge')">🧊 Fridge</div>
+      <div class="tab" data-tab="pantry" onclick="setTab('pantry')">🥫 Pantry</div>
+      <div class="tab" data-tab="freezer" onclick="setTab('freezer')">❄️ Freezer</div>
+    </div>
+
+    <div class="search-wrap">
+      <div class="search-bar">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" placeholder="Search items…" id="search-input" oninput="renderItems()">
+      </div>
+    </div>
+
+    <div class="stats-strip" id="stats-strip"></div>
+
+    <div class="content" id="items-content">
+      <div class="empty-state">
+        <div class="emoji">🥗</div>
+        <h3>Nothing here yet</h3>
+        <p>Tap the + button to add your first pantry item</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ALERTS PAGE -->
+  <div class="page" id="page-alerts">
+    <div class="header">
+      <div class="header-left">
+        <h1>Alerts</h1>
+        <p>Items needing attention</p>
+      </div>
+      <div class="header-actions">
+        <div class="icon-btn" onclick="sendAlertsToDiscord()" title="Send alerts to Discord">
+          <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        </div>
+      </div>
+    </div>
+    <div class="content">
+      <div id="alerts-content"></div>
+    </div>
+  </div>
+
+  <!-- SETTINGS PAGE -->
+  <div class="page" id="page-settings">
+    <div class="header">
+      <div class="header-left">
+        <h1>Settings</h1>
+        <p>Configure your pantry</p>
+      </div>
+    </div>
+    <div class="content">
+      <div style="padding-bottom: 20px;">
+
+        <div class="settings-section">
+          <div class="settings-section-title">Google Sheets Sync</div>
+          <div class="settings-card">
+            <div class="settings-row col">
+              <div style="display:flex;align-items:center;gap:12px;width:100%">
+                <div class="settings-row-icon" style="background:rgba(110,201,138,0.12)">📊</div>
+                <div class="settings-row-info">
+                  <div class="title">Apps Script URL</div>
+                  <div class="sub">Paste your Web App deployment URL</div>
+                </div>
+              </div>
+              <input class="settings-input" id="setting-script-url" placeholder="https://script.google.com/macros/s/…/exec">
+              <button class="btn-save" onclick="saveSetting('scriptUrl', document.getElementById('setting-script-url').value); fetchFromSheet()">Save & Sync</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-title">Discord Notifications</div>
+          <div class="settings-card">
+            <div class="settings-row col">
+              <div style="display:flex;align-items:center;gap:12px;width:100%">
+                <div class="settings-row-icon" style="background:rgba(88,101,242,0.15)">💬</div>
+                <div class="settings-row-info">
+                  <div class="title">Webhook URL</div>
+                  <div class="sub">Your Discord channel webhook</div>
+                </div>
+              </div>
+              <input class="settings-input" id="setting-webhook" placeholder="https://discord.com/api/webhooks/…">
+              <button class="btn-save" onclick="saveSetting('discordWebhook', document.getElementById('setting-webhook').value)">Save Webhook</button>
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-icon" style="background:var(--danger-soft)">📉</div>
+              <div class="settings-row-info">
+                <div class="title">Low stock alerts</div>
+                <div class="sub">Notify when quantity is below threshold</div>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" id="toggle-low" onchange="saveSetting('notifyLow', this.checked)" checked>
+                <div class="toggle-track"></div>
+              </label>
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-icon" style="background:var(--warning-soft)">📅</div>
+              <div class="settings-row-info">
+                <div class="title">Expiry alerts</div>
+                <div class="sub">Notify for items expiring within 3 days</div>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" id="toggle-expiry" onchange="saveSetting('notifyExpiry', this.checked)" checked>
+                <div class="toggle-track"></div>
+              </label>
+            </div>
+            <div class="settings-row col">
+              <div style="display:flex;align-items:center;gap:12px;width:100%">
+                <div class="settings-row-icon" style="background:rgba(110,201,138,0.12)">🧪</div>
+                <div class="settings-row-info">
+                  <div class="title">Test notification</div>
+                  <div class="sub">Send a test message to Discord now</div>
+                </div>
+              </div>
+              <button class="btn-save" onclick="testDiscord()" style="margin-top:10px">Send Test Message</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-title">Setup Guide</div>
+          <div class="settings-card">
+            <div class="settings-row col" style="gap:0">
+              <div class="instructions-text">
+                <strong>Step 1 — Create your Google Sheet</strong><br>
+                Make a new Sheet with these column headers in row 1:<br>
+                <code>id</code> <code>emoji</code> <code>name</code> <code>category</code> <code>quantity</code> <code>unit</code> <code>expiry</code> <code>threshold</code><br><br>
+
+                <strong>Step 2 — Add the Apps Script</strong><br>
+                In your Sheet go to <em>Extensions → Apps Script</em>. Replace all code with the script below, then click <em>Deploy → New Deployment → Web App</em>. Set "Who has access" to <em>Anyone</em>. Copy the URL.<br><br>
+
+                <div style="background:var(--surface3);border-radius:8px;padding:12px;font-family:monospace;font-size:11px;color:var(--accent2);line-height:1.6;overflow-x:auto;white-space:pre;margin:8px 0;">
+const SHEET = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Sheet1');
+
+function doGet(e) {
+  const rows = SHEET.getDataRange().getValues();
+  const [headers, ...data] = rows;
+  const items = data.map(r => {
+    const obj = {};
+    headers.forEach((h,i) => obj[h] = r[i]);
+    return obj;
+  });
+  return ContentService
+    .createTextOutput(JSON.stringify({items}))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  const {action, item} = JSON.parse(e.postData.contents);
+  const rows = SHEET.getDataRange().getValues();
+  const headers = rows[0];
+  if (action === 'add') {
+    SHEET.appendRow(headers.map(h => item[h] || ''));
+  } else if (action === 'update') {
+    for (let i=1; i&lt;rows.length; i++) {
+      if (rows[i][0] == item.id) {
+        headers.forEach((h,j) => SHEET.getRange(i+1,j+1).setValue(item[h]||''));
+        break;
+      }
+    }
+  } else if (action === 'delete') {
+    for (let i=1; i&lt;rows.length; i++) {
+      if (rows[i][0] == item.id) { SHEET.deleteRow(i+1); break; }
+    }
+  }
+  return ContentService.createTextOutput('ok');
+}</div>
+
+                <strong>Step 3 — Discord Webhook</strong><br>
+                In Discord: open your server → pick a channel → <em>Edit Channel → Integrations → Webhooks → New Webhook</em>. Copy the URL and paste it in the webhook field above.<br><br>
+
+                <strong>Step 4 — Install as app</strong><br>
+                <em>iPhone:</em> tap the share icon → Add to Home Screen.<br>
+                <em>Android:</em> tap ⋮ menu → Add to Home Screen / Install App.
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Nav -->
+  <div class="bottom-nav">
+    <div class="nav-item active" id="nav-home" onclick="showPage('home')">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span>Home</span>
+    </div>
+    <div class="nav-item" id="nav-alerts" onclick="showPage('alerts')">
+      <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      <span>Alerts</span>
+      <div class="nav-badge" id="alert-badge" style="display:none">0</div>
+    </div>
+    <div class="nav-item" id="nav-settings" onclick="showPage('settings')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06-.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span>Settings</span>
+    </div>
+  </div>
+
+  <button class="fab" id="fab-btn" onclick="openAddModal()">
+    <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  </button>
+</div>
+
+<!-- Add / Edit Modal -->
+<div class="modal-overlay" id="item-modal" onclick="handleModalClick(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-title">Add Item</div>
+
+    <div class="form-group">
+      <label class="form-label">Emoji</label>
+      <div class="emoji-picker" id="emoji-picker">
+        <div class="emoji-opt selected" data-emoji="🥛" onclick="selectEmoji(this)">🥛</div>
+        <div class="emoji-opt" data-emoji="🧀" onclick="selectEmoji(this)">🧀</div>
+        <div class="emoji-opt" data-emoji="🥚" onclick="selectEmoji(this)">🥚</div>
+        <div class="emoji-opt" data-emoji="🍎" onclick="selectEmoji(this)">🍎</div>
+        <div class="emoji-opt" data-emoji="🥦" onclick="selectEmoji(this)">🥦</div>
+        <div class="emoji-opt" data-emoji="🍅" onclick="selectEmoji(this)">🍅</div>
+        <div class="emoji-opt" data-emoji="🥩" onclick="selectEmoji(this)">🥩</div>
+        <div class="emoji-opt" data-emoji="🍗" onclick="selectEmoji(this)">🍗</div>
+        <div class="emoji-opt" data-emoji="🐟" onclick="selectEmoji(this)">🐟</div>
+        <div class="emoji-opt" data-emoji="🥫" onclick="selectEmoji(this)">🥫</div>
+        <div class="emoji-opt" data-emoji="🍞" onclick="selectEmoji(this)">🍞</div>
+        <div class="emoji-opt" data-emoji="🧄" onclick="selectEmoji(this)">🧄</div>
+        <div class="emoji-opt" data-emoji="🧅" onclick="selectEmoji(this)">🧅</div>
+        <div class="emoji-opt" data-emoji="🫙" onclick="selectEmoji(this)">🫙</div>
+        <div class="emoji-opt" data-emoji="🧂" onclick="selectEmoji(this)">🧂</div>
+        <div class="emoji-opt" data-emoji="🫒" onclick="selectEmoji(this)">🫒</div>
+        <div class="emoji-opt" data-emoji="🍋" onclick="selectEmoji(this)">🍋</div>
+        <div class="emoji-opt" data-emoji="🍫" onclick="selectEmoji(this)">🍫</div>
+        <div class="emoji-opt" data-emoji="🥤" onclick="selectEmoji(this)">🥤</div>
+        <div class="emoji-opt" data-emoji="🍷" onclick="selectEmoji(this)">🍷</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Item Name</label>
+      <input class="form-input" id="input-name" placeholder="e.g. Whole Milk" type="text">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Category</label>
+      <div class="cat-row">
+        <div class="cat-opt fridge selected" onclick="selectCat('fridge')">🧊 Fridge</div>
+        <div class="cat-opt pantry" onclick="selectCat('pantry')">🥫 Pantry</div>
+        <div class="cat-opt freezer" onclick="selectCat('freezer')">❄️ Freezer</div>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Quantity</label>
+        <input class="form-input" id="input-qty" placeholder="e.g. 2" type="number" min="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Unit</label>
+        <select class="form-select" id="input-unit">
+          <option>pcs</option><option>L</option><option>ml</option>
+          <option>kg</option><option>g</option><option>lbs</option>
+          <option>oz</option><option>pack</option><option>bag</option>
+          <option>box</option><option>can</option><option>bottle</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Expiry Date</label>
+        <input class="form-input" id="input-expiry" type="date">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Low Stock At</label>
+        <input class="form-input" id="input-threshold" placeholder="e.g. 1" type="number" min="0">
+      </div>
+    </div>
+
+    <button class="btn-primary" onclick="saveItem()">Save Item</button>
+    <button class="btn-danger" id="delete-btn" onclick="deleteItem()" style="display:none">Delete Item</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── State ─────────────────────────────────────────────────
+let items = [];
+let currentTab = 'all';
+let editingId = null;
+let selectedEmoji = '🥛';
+let selectedCat = 'fridge';
+
+const SETTINGS_KEY = 'pantry_settings_v2';
+let settings = { scriptUrl:'', discordWebhook:'', notifyLow:true, notifyExpiry:true };
+
+// ── Init ──────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  loadSettings();
+  loadLocalItems();
+  renderAll();
+  if (settings.scriptUrl) fetchFromSheet();
+});
+
+// ── Settings ──────────────────────────────────────────────
+function loadSettings() {
+  const s = localStorage.getItem(SETTINGS_KEY);
+  if (s) settings = {...settings, ...JSON.parse(s)};
+  document.getElementById('setting-script-url').value = settings.scriptUrl || '';
+  document.getElementById('setting-webhook').value = settings.discordWebhook || '';
+  document.getElementById('toggle-low').checked = settings.notifyLow !== false;
+  document.getElementById('toggle-expiry').checked = settings.notifyExpiry !== false;
+}
+
+function saveSetting(key, val) {
+  settings[key] = val;
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  if (key !== 'scriptUrl') showToast('Saved!', 'success');
+}
+
+// ── Local storage ─────────────────────────────────────────
+function loadLocalItems() {
+  const s = localStorage.getItem('pantry_items_v2');
+  if (s) items = JSON.parse(s);
+}
+function saveLocalItems() { localStorage.setItem('pantry_items_v2', JSON.stringify(items)); }
+
+// ── Google Sheets ─────────────────────────────────────────
+async function fetchFromSheet() {
+  if (!settings.scriptUrl) return;
+  try {
+    const r = await fetch(settings.scriptUrl + '?action=get');
+    const d = await r.json();
+    if (d.items) { items = d.items; saveLocalItems(); renderAll(); showToast('Synced ✓', 'success'); }
+  } catch { showToast('Sync failed — offline mode', 'error'); }
+}
+
+async function refreshData() {
+  if (!settings.scriptUrl) { showToast('Add Script URL in Settings', 'error'); return; }
+  showToast('Syncing…');
+  await fetchFromSheet();
+}
+
+async function pushToSheet(action, item) {
+  if (!settings.scriptUrl) return;
+  try {
+    await fetch(settings.scriptUrl, {
+      method:'POST', body:JSON.stringify({action,item}),
+      headers:{'Content-Type':'text/plain'}
+    });
+  } catch {}
+}
+
+// ── Discord ───────────────────────────────────────────────
+async function sendDiscord(content) {
+  if (!settings.discordWebhook) return false;
+  try {
+    const r = await fetch(settings.discordWebhook, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({content})
+    });
+    return r.ok;
+  } catch { return false; }
+}
+
+async function testDiscord() {
+  if (!settings.discordWebhook) { showToast('Add Webhook URL first', 'error'); return; }
+  const ok = await sendDiscord('🧪 **Pantry** — Test notification! Your Discord alerts are working correctly ✅');
+  showToast(ok ? 'Test sent to Discord!' : 'Failed — check webhook URL', ok ? 'success' : 'error');
+}
+
+async function sendAlertsToDiscord() {
+  if (!settings.discordWebhook) { showToast('Add Webhook URL in Settings', 'error'); return; }
+  const msgs = buildAlertMessages();
+  if (!msgs.length) { showToast('No alerts to send', 'success'); return; }
+  const ok = await sendDiscord(`🏠 **Pantry Alert** — ${new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'})}\n\n${msgs.join('\n')}`);
+  showToast(ok ? 'Alerts sent to Discord!' : 'Send failed', ok ? 'success' : 'error');
+}
+
+function buildAlertMessages() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const in3 = new Date(today); in3.setDate(today.getDate()+3);
+  const msgs = [];
+  items.forEach(item => {
+    if (settings.notifyLow && item.threshold && parseFloat(item.quantity) <= parseFloat(item.threshold))
+      msgs.push(`📉 **${item.emoji} ${item.name}** is running low — ${item.quantity} ${item.unit} left`);
+    if (settings.notifyExpiry && item.expiry) {
+      const exp = new Date(item.expiry+'T00:00:00');
+      if (exp >= today && exp <= in3) {
+        const days = Math.round((exp-today)/86400000);
+        msgs.push(`📅 **${item.emoji} ${item.name}** expires ${days===0?'today!':'in '+days+' day'+(days>1?'s':'')}`);
+      }
+    }
+  });
+  return msgs;
+}
+
+function autoCheckAlerts() {
+  const msgs = buildAlertMessages();
+  if (msgs.length && settings.discordWebhook)
+    sendDiscord(`🏠 **Pantry** — Daily check\n\n${msgs.join('\n')}`);
+}
+
+// ── Rendering ─────────────────────────────────────────────
+function renderAll() {
+  renderStats();
+  renderItems();
+  renderAlerts();
+  updateHeaderSub();
+}
+
+function updateHeaderSub() {
+  const d = new Date();
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  document.getElementById('header-sub').textContent = `${days[d.getDay()]}, ${months[d.getMonth()]} ${d.getDate()}`;
+}
+
+function renderStats() {
+  const counts = {fridge:0, pantry:0, freezer:0};
+  items.forEach(i => counts[i.category] = (counts[i.category]||0)+1);
+  const low = items.filter(i => i.threshold && parseFloat(i.quantity) <= parseFloat(i.threshold)).length;
+  document.getElementById('stats-strip').innerHTML = `
+    <div class="stat-chip"><div class="dot" style="background:var(--fridge)"></div><span class="label">Fridge</span><span class="val">${counts.fridge}</span></div>
+    <div class="stat-chip"><div class="dot" style="background:var(--pantry)"></div><span class="label">Pantry</span><span class="val">${counts.pantry}</span></div>
+    <div class="stat-chip"><div class="dot" style="background:var(--freezer)"></div><span class="label">Freezer</span><span class="val">${counts.freezer}</span></div>
+    ${low?`<div class="stat-chip"><div class="dot" style="background:var(--danger)"></div><span class="label">Low</span><span class="val">${low}</span></div>`:''}
+  `;
+}
+
+function renderItems() {
+  const q = document.getElementById('search-input').value.toLowerCase();
+  let list = currentTab==='all' ? items : items.filter(i=>i.category===currentTab);
+  if (q) list = list.filter(i=>i.name.toLowerCase().includes(q));
+  const el = document.getElementById('items-content');
+  if (!list.length) {
+    el.innerHTML=`<div class="empty-state"><div class="emoji">${{all:'🥗',fridge:'🧊',pantry:'🥫',freezer:'❄️'}[currentTab]}</div><h3>Nothing here</h3><p>Tap + to add an item</p></div>`;
+    return;
+  }
+  const today=new Date(); today.setHours(0,0,0,0);
+  const in3=new Date(today); in3.setDate(today.getDate()+3);
+  if (currentTab==='all') {
+    let html='';
+    ['fridge','pantry','freezer'].forEach(cat=>{
+      const ci=list.filter(i=>i.category===cat);
+      if(!ci.length) return;
+      html+=`<div class="section-label">${{fridge:'🧊 Fridge',pantry:'🥫 Pantry',freezer:'❄️ Freezer'}[cat]}</div><div class="items-list">`;
+      ci.forEach(item=>html+=buildItemCard(item,today,in3));
+      html+='</div>';
+    });
+    el.innerHTML=html;
+  } else {
+    el.innerHTML=`<div class="items-list">${list.map(i=>buildItemCard(i,today,in3)).join('')}</div>`;
+  }
+}
+
+function buildItemCard(item,today,in3) {
+  const isLow = item.threshold && parseFloat(item.quantity)<=parseFloat(item.threshold);
+  let isExp=false;
+  if(item.expiry){const e=new Date(item.expiry+'T00:00:00'); isExp=e>=today&&e<=in3;}
+  const cls=isLow?'low-stock':isExp?'expiring':'';
+  const badge=isLow?'<span class="item-badge badge-low">Low</span>':isExp?'<span class="item-badge badge-expiring">Expiring</span>':'<span class="item-badge badge-fresh">OK</span>';
+  const exp=item.expiry?`Expires ${fmtDate(item.expiry)}`:'No expiry';
+  return `<div class="item-card ${cls}" onclick="openEditModal('${item.id}')">
+    <div class="item-icon ${item.category}">${item.emoji||'📦'}</div>
+    <div class="item-info"><div class="item-name">${item.name}</div><div class="item-meta">${exp}</div></div>
+    <div class="item-right"><span class="item-qty">${item.quantity} ${item.unit}</span>${badge}</div>
+  </div>`;
+}
+
+function renderAlerts() {
+  const today=new Date(); today.setHours(0,0,0,0);
+  const in3=new Date(today); in3.setDate(today.getDate()+3);
+  const alerts=[];
+  items.forEach(item=>{
+    if(item.threshold && parseFloat(item.quantity)<=parseFloat(item.threshold))
+      alerts.push({type:'low',item,msg:`Only ${item.quantity} ${item.unit} left (threshold: ${item.threshold})`});
+    if(item.expiry){
+      const e=new Date(item.expiry+'T00:00:00');
+      if(e>=today&&e<=in3){
+        const days=Math.round((e-today)/86400000);
+        alerts.push({type:'expiring',item,msg:`Expires ${days===0?'today!':'in '+days+' day'+(days>1?'s':'')}`});
+      }
+    }
+  });
+  const badge=document.getElementById('alert-badge');
+  if(alerts.length){badge.style.display='flex';badge.textContent=alerts.length;}
+  else badge.style.display='none';
+  const el=document.getElementById('alerts-content');
+  if(!alerts.length){
+    el.innerHTML=`<div class="empty-state"><div class="emoji">✅</div><h3>All good!</h3><p>No low stock or expiring items right now.</p></div>`;
+    return;
+  }
+  el.innerHTML=`<div class="alerts-list">${alerts.map(a=>`
+    <div class="alert-card ${a.type}" onclick="openEditModal('${a.item.id}')">
+      <div class="alert-icon">${a.type==='low'?'📉':'📅'}</div>
+      <div class="alert-info"><h4>${a.item.emoji} ${a.item.name}</h4><p>${a.msg}</p></div>
+    </div>`).join('')}</div>`;
+}
+
+function fmtDate(d) {
+  if(!d) return '';
+  const dt=new Date(d+'T00:00:00');
+  return dt.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+}
+
+// ── Navigation ────────────────────────────────────────────
+function setTab(tab) {
+  currentTab=tab;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelector(`.tab[data-tab="${tab}"]`).classList.add('active');
+  renderItems();
+}
+
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('nav-'+name).classList.add('active');
+  document.getElementById('fab-btn').style.display = name==='home'?'flex':'none';
+}
+
+// ── Modal ─────────────────────────────────────────────────
+function openAddModal() {
+  editingId=null;
+  document.getElementById('modal-title').textContent='Add Item';
+  document.getElementById('input-name').value='';
+  document.getElementById('input-qty').value='';
+  document.getElementById('input-threshold').value='';
+  document.getElementById('input-expiry').value='';
+  document.getElementById('input-unit').value='pcs';
+  document.getElementById('delete-btn').style.display='none';
+  selectEmoji(document.querySelector('.emoji-opt[data-emoji="🥛"]'));
+  selectCat('fridge');
+  document.getElementById('item-modal').classList.add('open');
+}
+
+function openEditModal(id) {
+  const item=items.find(i=>i.id===id); if(!item) return;
+  editingId=id;
+  document.getElementById('modal-title').textContent='Edit Item';
+  document.getElementById('input-name').value=item.name;
+  document.getElementById('input-qty').value=item.quantity;
+  document.getElementById('input-threshold').value=item.threshold||'';
+  document.getElementById('input-expiry').value=item.expiry||'';
+  document.getElementById('input-unit').value=item.unit||'pcs';
+  document.getElementById('delete-btn').style.display='block';
+  const el=document.querySelector(`.emoji-opt[data-emoji="${item.emoji}"]`);
+  if(el) selectEmoji(el); else selectedEmoji=item.emoji||'📦';
+  selectCat(item.category||'fridge');
+  document.getElementById('item-modal').classList.add('open');
+}
+
+function handleModalClick(e) { if(e.target===document.getElementById('item-modal')) document.getElementById('item-modal').classList.remove('open'); }
+
+function selectEmoji(el) {
+  document.querySelectorAll('.emoji-opt').forEach(e=>e.classList.remove('selected'));
+  el.classList.add('selected'); selectedEmoji=el.dataset.emoji;
+}
+
+function selectCat(cat) {
+  selectedCat=cat;
+  document.querySelectorAll('.cat-opt').forEach(e=>e.classList.remove('selected'));
+  document.querySelector(`.cat-opt.${cat}`).classList.add('selected');
+}
+
+// ── CRUD ──────────────────────────────────────────────────
+function saveItem() {
+  const name=document.getElementById('input-name').value.trim();
+  if(!name){showToast('Please enter a name','error');return;}
+  const qty=document.getElementById('input-qty').value||'0';
+  const unit=document.getElementById('input-unit').value;
+  const expiry=document.getElementById('input-expiry').value;
+  const threshold=document.getElementById('input-threshold').value;
+
+  if(editingId) {
+    const idx=items.findIndex(i=>i.id===editingId);
+    if(idx>-1){items[idx]={...items[idx],name,emoji:selectedEmoji,category:selectedCat,quantity:qty,unit,expiry,threshold};pushToSheet('update',items[idx]);}
+  } else {
+    const item={id:Date.now().toString(),name,emoji:selectedEmoji,category:selectedCat,quantity:qty,unit,expiry,threshold};
+    items.push(item); pushToSheet('add',item);
+  }
+  saveLocalItems(); renderAll(); autoCheckAlerts();
+  document.getElementById('item-modal').classList.remove('open');
+  showToast(editingId?'Item updated':'Item added','success');
+}
+
+function deleteItem() {
+  if(!editingId) return;
+  const item=items.find(i=>i.id===editingId);
+  items=items.filter(i=>i.id!==editingId);
+  saveLocalItems(); renderAll();
+  if(item) pushToSheet('delete',item);
+  document.getElementById('item-modal').classList.remove('open');
+  showToast('Item deleted');
+}
+
+// ── Toast ─────────────────────────────────────────────────
+let toastT;
+function showToast(msg,type='') {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast show'+(type?' '+type:'');
+  clearTimeout(toastT); toastT=setTimeout(()=>{t.className='toast';},2500);
+}
+</script>
+</body>
+</html>
