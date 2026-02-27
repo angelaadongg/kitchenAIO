@@ -527,7 +527,7 @@ function buildItemCard(item,today,in3) {
 let quickId = null;
 
 function openQuickSheet(id) {
-  const item = items.find(i => i.id === id);
+  const item = items.find(i => String(i.id) === String(id));
   if (!item) return;
   quickId = id;
   document.getElementById('quick-emoji').textContent = item.emoji || '📦';
@@ -548,7 +548,7 @@ function handleQuickSheetClick(e) {
 }
 
 function adjustQty(delta) {
-  const item = items.find(i => i.id === quickId);
+  const item = items.find(i => String(i.id) === String(quickId));
   if (!item) return;
   const newQty = Math.max(0, parseFloat(item.quantity) + delta);
   item.quantity = String(newQty);
@@ -567,8 +567,8 @@ function openFullEdit() {
 
 function quickDelete() {
   if (!quickId) return;
-  const item = items.find(i => i.id === quickId);
-  items = items.filter(i => i.id !== quickId);
+  const item = items.find(i => String(i.id) === String(quickId));
+  items = items.filter(i => String(i.id) !== String(quickId));
   saveLocalItems(); renderAll();
   if (item) pushToSheet('delete', item);
   closeQuickSheet();
@@ -643,7 +643,7 @@ function openAddModal() {
 }
 
 function openEditModal(id) {
-  const item=items.find(i=>i.id===id); if(!item) return;
+  const item=items.find(i=>String(i.id)===String(id)); if(!item) return;
   editingId=id;
   document.getElementById('modal-title').textContent='Edit Item';
   document.getElementById('input-name').value=item.name;
