@@ -261,7 +261,11 @@ function doPost(e) {
     <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
   </button>
 
-  <div class="quick-sheet-overlay" id="quick-sheet" onclick="handleQuickSheetClick(event)">
+  <div class="sort-backdrop" id="sort-backdrop" onclick="closeSortMenu()"></div>
+
+</div>
+
+<div class="quick-sheet-overlay" id="quick-sheet" onclick="handleQuickSheetClick(event)">
   <div class="quick-sheet">
     <div class="modal-handle"></div>
     <div class="quick-sheet-header">
@@ -284,10 +288,6 @@ function doPost(e) {
       <button class="quick-action-btn delete" onclick="quickDelete()">🗑 Delete item</button>
     </div>
   </div>
-</div>
-
-  <div class="sort-backdrop" id="sort-backdrop" onclick="closeSortMenu()"></div>
-
 </div>
 
 <!-- Add / Edit Modal -->
