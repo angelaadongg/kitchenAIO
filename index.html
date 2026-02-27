@@ -199,7 +199,7 @@
         </div>
 
         <div style="text-align:center; padding: 24px 0 8px;">
-          <span style="font-size:11px; color:var(--text-muted); font-weight:300; letter-spacing:0.5px;">Peach's Kitchen · v1.0.5</span>
+          <span style="font-size:11px; color:var(--text-muted); font-weight:300; letter-spacing:0.5px;">Peach's Kitchen · v1.0.6</span>
         </div>
 
       </div>
@@ -561,8 +561,9 @@ function adjustQty(delta) {
 }
 
 function openFullEdit() {
+  const idToEdit = quickId;
   closeQuickSheet();
-  openEditModal(quickId);
+  openEditModal(idToEdit);
 }
 
 function quickDelete() {
