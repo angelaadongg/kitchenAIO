@@ -187,44 +187,6 @@
                 <strong>Step 2 — Add the Apps Script</strong><br>
                 In your Sheet go to <em>Extensions → Apps Script</em>. Replace all code with the script below, then click <em>Deploy → New Deployment → Web App</em>. Set "Who has access" to <em>Anyone</em>. Copy the URL.<br><br>
 
-                <div style="background:var(--surface3);border-radius:8px;padding:12px;font-family:monospace;font-size:11px;color:var(--accent2);line-height:1.6;overflow-x:auto;white-space:pre;margin:8px 0;">
-
-const SHEET = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Sheet1');
-
-function doGet(e) {
-  const rows = SHEET.getDataRange().getValues();
-  const [headers, ...data] = rows;
-  const items = data.map(r => {
-    const obj = {};
-    headers.forEach((h,i) => obj[h] = r[i]);
-    return obj;
-  });
-  return ContentService
-    .createTextOutput(JSON.stringify({items}))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
-function doPost(e) {
-  const {action, item} = JSON.parse(e.postData.contents);
-  const rows = SHEET.getDataRange().getValues();
-  const headers = rows[0];
-  if (action === 'add') {
-    SHEET.appendRow(headers.map(h => item[h] || ''));
-  } else if (action === 'update') {
-    for (let i=1; i&lt;rows.length; i++) {
-      if (rows[i][0] == item.id) {
-        headers.forEach((h,j) => SHEET.getRange(i+1,j+1).setValue(item[h]||''));
-        break;
-      }
-    }
-  } else if (action === 'delete') {
-    for (let i=1; i&lt;rows.length; i++) {
-      if (rows[i][0] == item.id) { SHEET.deleteRow(i+1); break; }
-    }
-  }
-  return ContentService.createTextOutput('ok');
-}</div>
-
                 <strong>Step 3 — Discord Webhook</strong><br>
                 In Discord: open your server → pick a channel → <em>Edit Channel → Integrations → Webhooks → New Webhook</em>. Copy the URL and paste it in the webhook field above.<br><br>
 
@@ -234,6 +196,10 @@ function doPost(e) {
               </div>
             </div>
           </div>
+        </div>
+
+        <div style="text-align:center; padding: 24px 0 8px;">
+          <span style="font-size:11px; color:var(--text-muted); font-weight:300; letter-spacing:0.5px;">Peach's Kitchen · v1.0.5</span>
         </div>
 
       </div>
