@@ -467,7 +467,38 @@ function updateHeaderSub() {
   const d = new Date();
   const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  document.getElementById('header-sub').textContent = `${days[d.getDay()]}, ${months[d.getMonth()]} ${d.getDate()}`;
+  const dateStr = `${days[d.getDay()]}, ${months[d.getMonth()]} ${d.getDate()}`;
+  document.getElementById('header-sub').textContent = dateStr;
+  fetchWeather(dateStr);
+}
+
+async function fetchWeather(dateStr) {
+  try {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(async pos => {
+      const { latitude, longitude } = pos.coords;
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true&temperature_unit=fahrenheit`;
+      const r = await fetch(url);
+      const d = await r.json();
+      const temp = Math.round(d.current_weather.temperature);
+      const code = d.current_weather.weathercode;
+      const icon = weatherIcon(code);
+      document.getElementById('header-sub').textContent = `${dateStr} · ${icon} ${temp}°F`;
+    }, () => {});
+  } catch {}
+}
+
+function weatherIcon(code) {
+  if (code === 0) return '☀️';
+  if (code <= 2) return '⛅';
+  if (code <= 3) return '☁️';
+  if (code <= 49) return '🌫️';
+  if (code <= 59) return '🌦️';
+  if (code <= 69) return '🌧️';
+  if (code <= 79) return '❄️';
+  if (code <= 82) return '🌧️';
+  if (code <= 94) return '⛈️';
+  return '🌩️';
 }
 
 function renderStats() {
