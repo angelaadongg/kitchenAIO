@@ -513,3 +513,34 @@
   background: var(--danger-soft); border-color: rgba(201,110,110,0.2); color: var(--danger);
 }
 .quick-action-btn:active { transform: scale(0.98); }
+
+.tao-chip-group {
+  display: flex; flex-wrap: wrap; gap: 8px;
+}
+.tao-chip {
+  padding: 8px 14px; border-radius: 20px;
+  font-size: 13px; font-weight: 500;
+  border: 1px solid var(--border);
+  color: var(--text-muted); background: transparent;
+  cursor: pointer; transition: all 0.2s;
+  user-select: none;
+}
+.tao-chip.selected {
+  color: var(--accent);
+  border-color: rgba(201,169,110,0.5);
+  background: var(--accent-glow);
+}
+.tao-chip:active { transform: scale(0.95); }
+
+.tao-collapsible-header {
+  display: flex; align-items: center; justify-content: space-between;
+  cursor: pointer; margin-bottom: 4px;
+}
+
+.tao-prompt-box {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px;
+  font-size: 13px; color: var(--text-mid);
+  line-height: 1.7; font-weight: 300;
+  white-space: pre-wrap; word-break: break-word;
+}

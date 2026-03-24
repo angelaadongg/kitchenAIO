@@ -80,6 +80,85 @@
     </div>
   </div>
 
+  <!-- TAO PAGE -->
+  <div class="page" id="page-tao">
+    <div class="header">
+      <div class="header-left">
+        <h1>TAO</h1>
+        <p>Build your recipe prompt</p>
+      </div>
+    </div>
+    <div class="content">
+      <div style="padding-bottom:20px;">
+
+        <!-- Priorities -->
+        <div class="settings-section">
+          <div class="settings-section-title">Priorities</div>
+          <div class="tao-chip-group" id="tao-priorities">
+            <div class="tao-chip" data-value="expiry">⏳ Near expiry first</div>
+            <div class="tao-chip" data-value="meat">🥩 Meat heavy</div>
+            <div class="tao-chip" data-value="fiber">🥦 Fiber heavy</div>
+            <div class="tao-chip" data-value="lowcarb">🌿 Low carbs</div>
+          </div>
+        </div>
+
+        <!-- Cuisine -->
+        <div class="settings-section">
+          <div class="settings-section-title">Cuisine</div>
+          <div class="tao-chip-group" id="tao-cuisines">
+            <div class="tao-chip" data-value="italian">🍝 Italian</div>
+            <div class="tao-chip" data-value="asian">🍜 Asian</div>
+            <div class="tao-chip" data-value="mexican">🌮 Mexican</div>
+            <div class="tao-chip" data-value="mediterranean">🫒 Mediterranean</div>
+            <div class="tao-chip" data-value="american">🍔 American</div>
+            <div class="tao-chip" data-value="indian">🍛 Indian</div>
+            <div class="tao-chip" data-value="french">🥐 French</div>
+            <div class="tao-chip" data-value="japanese">🍱 Japanese</div>
+          </div>
+        </div>
+
+        <!-- Ingredients -->
+        <div class="settings-section">
+          <div class="tao-collapsible-header" onclick="toggleIngredientPicker()">
+            <div class="settings-section-title" style="margin:0">Choose specific ingredients</div>
+            <svg id="tao-chevron" viewBox="0 0 24 24" style="width:16px;height:16px;stroke:var(--text-muted);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform 0.25s"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div id="tao-ingredient-picker" style="display:none;margin-top:10px;">
+            <div class="tao-chip-group" id="tao-ingredients"></div>
+          </div>
+        </div>
+
+        <!-- Weather -->
+        <div class="settings-section">
+          <div class="settings-card">
+            <div class="settings-row">
+              <div class="settings-row-icon" style="background:rgba(110,159,201,0.12)">🌤️</div>
+              <div class="settings-row-info">
+                <div class="title">Include weather</div>
+                <div class="sub">Factor in today's weather when suggesting recipes</div>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" id="tao-weather-toggle">
+                <div class="toggle-track"></div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Generate -->
+        <button class="btn-primary" onclick="generateTaoPrompt()" style="margin-top:8px">✨ Generate Prompt</button>
+
+        <!-- Output -->
+        <div id="tao-output" style="display:none;margin-top:20px;">
+          <div class="settings-section-title">Your prompt</div>
+          <div class="tao-prompt-box" id="tao-prompt-text"></div>
+          <button class="btn-save" style="margin-top:10px" onclick="copyTaoPrompt()">📋 Copy to clipboard</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
   <!-- ALERTS PAGE -->
   <div class="page" id="page-alerts">
     <div class="header">
@@ -211,6 +290,10 @@
     <div class="nav-item active" id="nav-home" onclick="showPage('home')">
       <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
       <span>Home</span>
+    </div>
+    <div class="nav-item" id="nav-tao" onclick="showPage('tao')">
+      <svg viewBox="0 0 24 24"><path d="M6 3v4a6 6 0 0 0 12 0V3l-3 3H9L6 3z"/><path d="M6 7a6 6 0 0 0 0 8h12a6 6 0 0 0 0-8"/><circle cx="9" cy="11" r="1"/><circle cx="15" cy="11" r="1"/><path d="M9.5 15c.8.8 4.2.8 5 0"/></svg>
+      <span>TAO</span>
     </div>
     <div class="nav-item" id="nav-alerts" onclick="showPage('alerts')">
       <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
@@ -483,7 +566,8 @@ async function fetchWeather(dateStr) {
       const temp = Math.round(d.current_weather.temperature);
       const code = d.current_weather.weathercode;
       const icon = weatherIcon(code);
-      document.getElementById('header-sub').textContent = `${dateStr} · ${icon} ${temp}°F`;
+      document.getElementById('header-sub').textContent = `${dateStr} · ${temp}°F`;
+      taoWeatherDesc = `${temp}°F`;
     }, () => {});
   } catch {}
 }
@@ -543,10 +627,11 @@ function renderItems() {
 function buildItemCard(item,today,in3) {
   const isLow = item.threshold && parseFloat(item.quantity)<=parseFloat(item.threshold);
   let isExp=false;
-  if(item.expiry){const e=new Date(item.expiry+'T00:00:00'); isExp=e>=today&&e<=in3;}
+  if(item.expiry){const e=new Date(String(item.expiry).trim()+'T00:00:00'); isExp=!isNaN(e)&&e>=today&&e<=in3;}
   const cls=isLow?'low-stock':isExp?'expiring':'';
   const badge=isLow?'<span class="item-badge badge-low">Low</span>':isExp?'<span class="item-badge badge-expiring">Expiring</span>':'<span class="item-badge badge-fresh">OK</span>';
-  const exp=item.expiry?`Expires ${fmtDate(item.expiry)}`:'No expiry';
+  const formatted = fmtDate(item.expiry);
+  const exp = formatted ? `Expires ${formatted}` : 'No expiry';
   return `<div class="item-card ${cls}" onclick="openQuickSheet('${item.id}')">
     <div class="item-icon ${item.category}">${item.emoji||'📦'}</div>
     <div class="item-info"><div class="item-name">${item.name}</div><div class="item-meta">${exp}</div></div>
@@ -639,8 +724,11 @@ function renderAlerts() {
 
 function fmtDate(d) {
   if(!d) return '';
-  const dt=new Date(d+'T00:00:00');
-  return dt.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+  const clean = String(d).trim();
+  if(!clean) return '';
+  const dt = new Date(clean + 'T00:00:00');
+  if(isNaN(dt.getTime())) return '';
+  return dt.toLocaleDateString('en-GB',{month:'short', day:'numeric'});
 }
 
 // ── Navigation ────────────────────────────────────────────
@@ -790,6 +878,81 @@ function showToast(msg,type='') {
   t.textContent=msg; t.className='toast show'+(type?' '+type:'');
   clearTimeout(toastT); toastT=setTimeout(()=>{t.className='toast';},2500);
 }
+
+// ── TAO ───────────────────────────────────────────────────
+let taoWeatherDesc = '';
+
+function initTaoIngredients() {
+  const el = document.getElementById('tao-ingredients');
+  if (!el) return;
+  el.innerHTML = items.map(item =>
+    `<div class="tao-chip" data-value="${item.id}">${item.emoji} ${item.name}</div>`
+  ).join('');
+  el.querySelectorAll('.tao-chip').forEach(c => {
+    c.addEventListener('click', () => c.classList.toggle('selected'));
+  });
+}
+
+function toggleIngredientPicker() {
+  const picker = document.getElementById('tao-ingredient-picker');
+  const chevron = document.getElementById('tao-chevron');
+  const isOpen = picker.style.display !== 'none';
+  picker.style.display = isOpen ? 'none' : 'block';
+  chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+  if (!isOpen) initTaoIngredients();
+}
+
+document.querySelectorAll('#tao-priorities .tao-chip, #tao-cuisines .tao-chip').forEach(c => {
+  c.addEventListener('click', () => c.classList.toggle('selected'));
+});
+
+function generateTaoPrompt() {
+  const priorities = [...document.querySelectorAll('#tao-priorities .tao-chip.selected')].map(c => c.dataset.value);
+  const cuisines = [...document.querySelectorAll('#tao-cuisines .tao-chip.selected')].map(c => c.textContent.trim());
+  const selectedIds = [...document.querySelectorAll('#tao-ingredients .tao-chip.selected')].map(c => c.dataset.value);
+  const useWeather = document.getElementById('tao-weather-toggle').checked;
+
+  // Build inventory section
+  const today = new Date(); today.setHours(0,0,0,0);
+  const in3 = new Date(today); in3.setDate(today.getDate()+3);
+
+  let inventory = [];
+  if (selectedIds.length > 0) {
+    inventory = items.filter(i => selectedIds.includes(String(i.id)));
+  } else {
+    inventory = [...items];
+  }
+
+  if (!inventory.length) { showToast('No items in your pantry yet', 'error'); return; }
+
+  const inventoryStr = inventory.map(item => {
+    const expiring = item.expiry && new Date(item.expiry+'T00:00:00') <= in3;
+    return `- ${item.emoji} ${item.name} (${item.quantity} ${item.unit}${expiring ? ', expiring soon' : ''})`;
+  }).join('\n');
+
+  // Priority instructions
+  const priorityMap = {
+    expiry: 'prioritise using ingredients that are expiring soon',
+    meat: 'prioritise meat-heavy recipes',
+    fiber: 'prioritise high-fibre, vegetable-rich recipes',
+    lowcarb: 'keep the recipes low in carbohydrates'
+  };
+  const priorityStr = priorities.map(p => priorityMap[p]).filter(Boolean).join(', ');
+  const cuisineStr = cuisines.length ? `I'm in the mood for ${cuisines.join(' or ')} cuisine.` : '';
+  const weatherStr = useWeather && taoWeatherDesc ? `The weather today is ${taoWeatherDesc}, so factor that into your suggestions.` : '';
+
+  const prompt = `I want to cook something using ingredients I already have at home. Here's what I have:\n\n${inventoryStr}\n\nPlease suggest 3 recipes I can make${priorityStr ? ', and ' + priorityStr : ''}.${cuisineStr ? ' ' + cuisineStr : ''}${weatherStr ? ' ' + weatherStr : ''} For each recipe, list the ingredients I need from my pantry and any extras I might be missing.`;
+
+  document.getElementById('tao-prompt-text').textContent = prompt;
+  document.getElementById('tao-output').style.display = 'block';
+  document.getElementById('tao-prompt-text').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function copyTaoPrompt() {
+  const text = document.getElementById('tao-prompt-text').textContent;
+  navigator.clipboard.writeText(text).then(() => showToast('Copied!', 'success'));
+}
+
 </script>
 </body>
 </html>
